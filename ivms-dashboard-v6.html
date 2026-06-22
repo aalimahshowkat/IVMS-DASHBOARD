@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IVMS PMO Dashboard 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f17;--surface:#141720;--surface2:#1c2030;--surface3:#232840;
+  --border:#2a3050;--border2:#3a4470;
+  --accent:#4f7cff;--accent2:#00c896;--warn:#f5a623;--danger:#ff4d6d;--purple:#a855f7;
+  --text:#e8eaf6;--text2:#8b90b8;--text3:#5a5f7a;
+  --green:#00c896;--yellow:#f5a623;--red:#ff4d6d;--blue:#4f7cff;--gray:#5a5f7a;
+  --font:'Inter',system-ui,sans-serif;
+  --r:8px;--r2:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{font-size:16px;font-weight:700;color:var(--accent);letter-spacing:-.5px}
+.brand-sep{color:var(--border2);font-weight:300}
+.brand-title{font-size:13px;color:var(--text2)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.refresh-time{font-size:11px;color:var(--text3)}
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6b8fff}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.btn-danger{background:rgba(255,77,109,.15);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+
+/* TABS */
+.nav-tabs{display:flex;gap:2px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-tab{padding:12px 18px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-tab:hover:not(.active){color:var(--text)}
+
+/* CONFIG */
+.config-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:12px;align-items:flex-end}
+.cfg-grp{display:flex;flex-direction:column;gap:5px}
+.cfg-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.cfg-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 11px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border .15s;min-width:160px}
+.cfg-input:focus{border-color:var(--accent)}
+
+/* PAGE */
+.page{display:none;padding:20px 24px 40px}
+.page.active{display:block}
+
+/* LOADING / ERROR */
+.loader{display:flex;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--text2);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.25);border-radius:var(--r);padding:14px 18px;color:var(--red);font-size:12px;margin-bottom:16px}
+
+/* SECTION */
+.sec-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 10px}
+.sec-label:first-child{margin-top:0}
+
+/* SUMMARY CARDS */
+.cards6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;transition:border .15s}
+.card:hover{border-color:var(--border2)}
+.card-val{font-size:30px;font-weight:700;line-height:1;margin-bottom:5px}
+.card-lbl{font-size:11px;color:var(--text2)}
+.card-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.c-completed .card-val{color:var(--green)}
+.c-inprogress .card-val{color:var(--blue)}
+.c-ontime .card-val{color:var(--green)}
+.c-delayed .card-val{color:var(--red)}
+.c-tostart .card-val{color:var(--text2)}
+.c-blocked .card-val{color:var(--warn)}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+
+/* STAGE TABLE */
+.stage-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.stage-panel table{width:100%;border-collapse:collapse}
+.stage-panel th{padding:9px 14px;text-align:left;font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface2)}
+.stage-panel td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.stage-panel tr:last-child td{border-bottom:none}
+.stage-panel tr:hover td{background:var(--surface2)}
+.stg-bar-wrap{display:flex;align-items:center;gap:8px}
+.stg-bar{height:4px;border-radius:2px;background:var(--accent);opacity:.65}
+.stg-count{font-weight:600;color:var(--accent)}
+
+/* DELIVERY CALENDAR */
+.cal-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.cal-panel table{width:100%;border-collapse:collapse}
+.cal-panel th{padding:8px 12px;text-align:left;font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface2)}
+.cal-panel td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px}
+.cal-panel tr:last-child td{border-bottom:none}
+.cal-panel tr.peak td{background:rgba(0,200,150,.04)}
+.cal-bar-wrap{display:flex;align-items:center;gap:6px}
+.cal-bar{height:5px;border-radius:2px;background:var(--green);opacity:.7}
+.cal-pct{font-size:10px;color:var(--text3)}
+
+/* PROJECT DEEP DIVE TABLE */
+.dive-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.dive-controls{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.filter-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:6px;padding:3px}
+.ftab{padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;color:var(--text2);border:none;background:none;font-family:var(--font);transition:all .15s}
+.ftab.active{background:var(--accent);color:#fff}
+.ftab:hover:not(.active){color:var(--text)}
+.search-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;width:200px}
+.search-box:focus{border-color:var(--accent)}
+.table-scroll{overflow-x:auto;max-height:600px;overflow-y:auto}
+.dive-table{width:100%;border-collapse:collapse;min-width:1200px}
+.dive-table thead{position:sticky;top:0;z-index:10}
+.dive-table th{padding:9px 10px;text-align:left;font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+.dive-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;vertical-align:middle;white-space:nowrap}
+.dive-table tr:hover td{background:rgba(79,124,255,.04)}
+.plink{color:var(--accent);text-decoration:none;font-weight:500;font-size:11px}
+.plink:hover{text-decoration:underline}
+.pname{max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text)}
+
+/* STAGE PILLS */
+.spill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;white-space:nowrap}
+.sp-co{background:rgba(0,200,150,.12);color:var(--green)}
+.sp-cd{background:rgba(255,77,109,.12);color:var(--red)}
+.sp-io{background:rgba(79,124,255,.15);color:var(--blue)}
+.sp-id{background:rgba(255,77,109,.2);color:var(--red)}
+.sp-ts{background:rgba(90,95,122,.15);color:var(--text2)}
+.sp-nn{background:rgba(90,95,122,.1);color:var(--text3)}
+.sp-na{color:var(--text3);font-size:10px}
+
+/* OVERALL STATUS PILL */
+.opill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
+.op-co{background:rgba(0,200,150,.12);color:var(--green)}
+.op-ip{background:rgba(79,124,255,.12);color:var(--blue)}
+.op-dl{background:rgba(255,77,109,.12);color:var(--red)}
+.op-tb{background:rgba(90,95,122,.12);color:var(--text2)}
+.op-bk{background:rgba(245,166,35,.12);color:var(--warn)}
+
+/* EDD */
+.edd-ok{color:var(--text2)}
+.edd-warn{color:var(--warn)}
+.edd-bad{color:var(--red)}
+
+/* DAYS */
+.days-pos{color:var(--green)}
+.days-neg{color:var(--red)}
+.days-neu{color:var(--text2)}
+
+/* WELCOME */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;gap:14px}
+.welcome h2{font-size:20px;font-weight:600}
+.welcome p{color:var(--text2);font-size:12px;max-width:380px;line-height:1.7}
+
+/* FOOTER */
+.table-footer{padding:8px 14px;font-size:10px;color:var(--text3);border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+  .cards6{grid-template-columns:repeat(3,1fr)}
+  .two-col{grid-template-columns:1fr}
+  .config-bar{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-logo">AiDASH</span>
+    <span class="brand-sep">/</span>
+    <span class="brand-title">IVMS PMO Dashboard 2026</span>
+  </div>
+  <div class="topbar-right">
+    <span class="refresh-time" id="refreshTime"></span>
+    <button class="btn btn-ghost" onclick="toggleConfig()" id="configBtn">⚙ Setup</button>
+    <button class="btn btn-primary" id="loadBtn" onclick="loadAll()" disabled>↻ Refresh</button>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('overview',this)">Overview</div>
+  <div class="nav-tab" onclick="showPage('deepdive',this)">Project Deep Dive</div>
+</div>
+
+<!-- CONFIG BAR -->
+<div class="config-bar" id="configBar">
+  <div class="cfg-grp">
+    <label class="cfg-label">Jira Domain</label>
+    <input class="cfg-input" id="cfgDomain" value="aidash.atlassian.net" style="width:200px">
+  </div>
+  <div class="cfg-grp">
+    <label class="cfg-label">Email</label>
+    <input class="cfg-input" id="cfgEmail" placeholder="you@aidash.com" style="width:200px">
+  </div>
+  <div class="cfg-grp">
+    <label class="cfg-label">API Token</label>
+    <input class="cfg-input" id="cfgToken" type="password" placeholder="Your Jira API token" style="width:220px">
+  </div>
+  <div class="cfg-grp">
+    <label class="cfg-label">Delivery Year ≥</label>
+    <input class="cfg-input" id="cfgYear" value="2026" style="width:90px">
+  </div>
+  <button class="btn btn-primary" onclick="saveAndLoad()">Connect & Load</button>
+</div>
+
+<!-- OVERVIEW PAGE -->
+<div class="page active" id="page-overview">
+  <div id="overview-content">
+    <div class="welcome">
+      <div style="font-size:44px">📊</div>
+      <h2>IVMS PMO Dashboard</h2>
+      <p>Configure your Jira credentials above and click <strong>Connect & Load</strong> to pull live data from Jira.</p>
+    </div>
+  </div>
+</div>
+
+<!-- DEEP DIVE PAGE -->
+<div class="page" id="page-deepdive">
+  <div id="deepdive-content">
+    <div class="welcome">
+      <div style="font-size:44px">🔍</div>
+      <h2>Project Deep Dive</h2>
+      <p>Load data from the Overview tab first.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let allEpics = [];
+let ddFilter = 'all';
+let ddSearch = '';
+
+// ── Config ─────────────────────────────────────────────────────────────
+function cfg() {
+  return {
+    domain: sessionStorage.getItem('j_domain') || 'aidash.atlassian.net',
+    email:  sessionStorage.getItem('j_email')  || '',
+    token:  sessionStorage.getItem('j_token')  || '',
+    year:   sessionStorage.getItem('j_year')   || '2026',
+  };
+}
+function saveConfig() {
+  sessionStorage.setItem('j_domain', document.getElementById('cfgDomain').value.trim());
+  sessionStorage.setItem('j_email',  document.getElementById('cfgEmail').value.trim());
+  sessionStorage.setItem('j_token',  document.getElementById('cfgToken').value.trim());
+  sessionStorage.setItem('j_year',   document.getElementById('cfgYear').value.trim());
+}
+function toggleConfig() {
+  const b = document.getElementById('configBar');
+  b.style.display = b.style.display === 'none' ? 'flex' : 'none';
+}
+function saveAndLoad() {
+  saveConfig();
+  const c = cfg();
+  if (!c.email || !c.token) { alert('Please enter your email and API token.'); return; }
+  document.getElementById('loadBtn').disabled = false;
+  document.getElementById('configBar').style.display = 'none';
+  loadAll();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── API ────────────────────────────────────────────────────────────────
+async function jiraFetch(path) {
+  const c = cfg();
+  const auth = 'Basic ' + btoa(c.email + ':' + c.token);
+  const url  = 'https://' + c.domain + path;
+  const headers = { 'Authorization': auth, 'Accept': 'application/json' };
+
+  const proxies = [
+    u => u,                                                        // direct (works on GitHub Pages)
+    u => 'https://corsproxy.io/?' + encodeURIComponent(u),        // proxy 1
+    u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u), // proxy 2
+    u => 'https://proxy.cors.sh/' + u,                            // proxy 3
+  ];
+
+  let lastErr = '';
+  for (const makeUrl of proxies) {
+    try {
+      const r = await fetch(makeUrl(url), { headers, signal: AbortSignal.timeout(8000) });
+      if (r.ok) return r.json();
+      lastErr = r.status + ' ' + r.statusText;
+    } catch(e) { lastErr = e.message; }
+  }
+  throw new Error('All connection attempts failed: ' + lastErr + '. Try opening via a local server or GitHub Pages.');
+}
+
+async function fetchAllEpics() {
+  const c = cfg();
+  const jql = `project = IVMSP AND issuetype = Epic AND ("cf[10651]" is EMPTY OR "cf[10651]" = "IVMS") AND "Delivery Year" >= ${c.year} AND status NOT IN ("Not Needed","Released in Production","Under Review") ORDER BY "Current Project Stage" ASC`;
+  const fields = [
+    'summary','status','assignee',
+    'customfield_10176', // Delivery Status
+    'customfield_10634', // Network Type
+    'customfield_10163', // Dx LMs
+    'customfield_10164', // Tx LMs
+    'customfield_10513', // EDD
+    'customfield_10747', // RDD
+    'customfield_10249', // Last Milestone Passed
+    'customfield_10250', // Current Project Stage
+    'customfield_10652','customfield_10653','customfield_10654','customfield_10655', // Modules
+    'customfield_10651', // Delivery Year / Product
+    // Stage health fields (written by automation)
+    'customfield_13519','customfield_13512','customfield_13513','customfield_13514',
+    'customfield_13515','customfield_13516','customfield_13517','customfield_13518',
+  ].join(',');
+
+  let issues = [], startAt = 0;
+  while (true) {
+    const data = await jiraFetch(`/rest/api/3/search?jql=${encodeURIComponent(jql)}&startAt=${startAt}&maxResults=50&fields=${fields}`);
+    issues = issues.concat(data.issues || []);
+    if (issues.length >= data.total || !(data.issues||[]).length) break;
+    startAt += 50;
+  }
+  return issues.map(i => {
+    const f = i.fields;
+    return {
+      key:           i.key,
+      url:           'https://' + cfg().domain + '/browse/' + i.key,
+      summary:       f.summary || '',
+      name:          (f.summary || '').replace(/^\[.*?\]\s*/, ''),
+      status:        f.status?.name || '',
+      deliveryStatus: f.customfield_10176?.value || '',
+      networkType:   f.customfield_10634?.value || '',
+      dxLMs:         f.customfield_10163 || 0,
+      txLMs:         f.customfield_10164 || 0,
+      edd:           f.customfield_10513 || '',
+      rdd:           f.customfield_10747 || '',
+      lastMilestone: f.customfield_10249?.value || '',
+      currentStage:  (f.customfield_10250 || []).map(s => s.value).join(', '),
+      assignee:      f.assignee?.displayName || 'Unassigned',
+      // Stage health from automation fields
+      sh_imagery:    f.customfield_13519 || '',
+      sh_correction: f.customfield_13512 || '',
+      sh_ingestion:  f.customfield_13513 || '',
+      sh_validation: f.customfield_13514 || '',
+      sh_edd_over:   f.customfield_13515 || '',
+      sh_eid_over:   f.customfield_13516 || '',
+      sh_eid_appr:   f.customfield_13517 || '',
+      sh_edd_appr:   f.customfield_13518 || '',
+    };
+  });
+}
+
+// ── Load All ────────────────────────────────────────────────────────────
+async function loadAll() {
+  const btn = document.getElementById('loadBtn');
+  btn.disabled = true; btn.textContent = '↻ Loading…';
+  setLoading('overview'); setLoading('deepdive');
+  try {
+    allEpics = await fetchAllEpics();
+    renderOverview();
+    renderDeepDive();
+    document.getElementById('refreshTime').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setError('overview', e.message);
+    setError('deepdive', e.message);
+  }
+  btn.disabled = false; btn.textContent = '↻ Refresh';
+}
+
+function setLoading(page) {
+  document.getElementById(page + '-content').innerHTML =
+    '<div class="loader"><div class="spinner"></div> Fetching data from Jira…</div>';
+}
+function setError(page, msg) {
+  document.getElementById(page + '-content').innerHTML =
+    `<div class="error-box">❌ ${msg}</div>`;
+}
+
+// ── OVERVIEW ────────────────────────────────────────────────────────────
+function renderOverview() {
+  const epics = allEpics;
+  const total = epics.length;
+
+  // Summary counts
+  const completed  = epics.filter(e => ['Done'].includes(e.status)).length;
+  const inProgress = epics.filter(e => e.status === 'In Progress').length;
+  const onTime     = epics.filter(e => { const d = (e.deliveryStatus||'').toLowerCase(); return d.includes('on track')||d.includes('on time'); }).length;
+  const delayed    = epics.filter(e => { const d = (e.deliveryStatus||'').toLowerCase(); return d.includes('delay')||d.includes('off track')||d.includes('at risk'); }).length;
+  const toStart    = epics.filter(e => e.status === 'To Do').length;
+  const blocked    = epics.filter(e => e.status === 'Blocked').length;
+
+  // Dx/Tx LMs
+  const totalDx = epics.reduce((s,e) => s + (Number(e.dxLMs)||0), 0);
+  const totalTx = epics.reduce((s,e) => s + (Number(e.txLMs)||0), 0);
+
+  // Stage breakdown from currentStage field
+  const stageMap = {};
+  epics.forEach(e => {
+    const st = e.currentStage || 'Not Set';
+    stageMap[st] = (stageMap[st]||0) + 1;
+  });
+  const stageOrder = ['1a. Image procurement','1b. Correction','2. Image ingestion','3. Validation','4. Model runs','5. HILO QC','6. Analysis','7. Publish'];
+  const stageRows = Object.entries(stageMap)
+    .sort((a,b) => {
+      const ai = stageOrder.findIndex(s => a[0].toLowerCase().includes(s.split(' ')[0].toLowerCase()));
+      const bi = stageOrder.findIndex(s => b[0].toLowerCase().includes(s.split(' ')[0].toLowerCase()));
+      return (ai<0?99:ai) - (bi<0?99:bi);
+    });
+  const maxStage = Math.max(...stageRows.map(r=>r[1]), 1);
+
+  // Delivery calendar — group by EDD month
+  const monthMap = {};
+  epics.forEach(e => {
+    if (!e.edd) return;
+    const d = new Date(e.edd);
+    if (isNaN(d)) return;
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!monthMap[key]) monthMap[key] = {count:0, lms:0};
+    monthMap[key].count++;
+    monthMap[key].lms += (Number(e.dxLMs)||0) + (Number(e.txLMs)||0);
+  });
+  const months = Object.entries(monthMap).sort((a,b)=>a[0].localeCompare(b[0]));
+  const maxLMs = Math.max(...months.map(m=>m[1].lms), 1);
+  const totalCal = months.reduce((s,m)=>s+m[1].lms,0);
+
+  document.getElementById('overview-content').innerHTML = `
+    <div class="sec-label">Overall Delivery Status — ${total} Active Projects &nbsp;·&nbsp; ${fmtN(totalDx+totalTx)} Total LMs</div>
+    <div class="cards6">
+      <div class="card c-completed"><div class="card-val">${completed}</div><div class="card-lbl">Completed</div></div>
+      <div class="card c-inprogress"><div class="card-val">${inProgress}</div><div class="card-lbl">In Progress</div></div>
+      <div class="card c-ontime"><div class="card-val">${onTime}</div><div class="card-lbl">On Time</div><div class="card-sub">${inProgress ? Math.round(onTime/Math.max(inProgress,1)*100)+'% of in-progress' : ''}</div></div>
+      <div class="card c-delayed"><div class="card-val">${delayed}</div><div class="card-lbl">Delayed / At Risk</div></div>
+      <div class="card c-tostart"><div class="card-val">${toStart}</div><div class="card-lbl">To Be Started</div></div>
+      <div class="card c-blocked"><div class="card-val">${blocked}</div><div class="card-lbl">Blocked</div></div>
+    </div>
+
+    <div class="sec-label" style="margin-top:20px">Stage Breakdown &amp; Delivery Calendar</div>
+    <div class="two-col">
+      <div class="stage-panel">
+        <table>
+          <thead><tr><th>Stage</th><th style="text-align:right"># Projects</th></tr></thead>
+          <tbody>
+            ${stageRows.map(([st,cnt]) => `
+            <tr>
+              <td><div class="stg-bar-wrap">
+                <div class="stg-bar" style="width:${Math.round(cnt/maxStage*56)}px"></div>
+                <span>${st}</span>
+              </div></td>
+              <td style="text-align:right"><span class="stg-count">${cnt}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cal-panel">
+        <table>
+          <thead><tr><th>Month</th><th style="text-align:right"># Deliveries</th><th>LMs</th><th style="text-align:right">% of Total</th></tr></thead>
+          <tbody>
+            ${months.map(([mo,d]) => {
+              const pct = totalCal ? Math.round(d.lms/totalCal*100) : 0;
+              const [yr,m] = mo.split('-');
+              const label = new Date(yr,+m-1,1).toLocaleString('default',{month:'short'})+' '+yr;
+              const isPeak = d.lms > totalCal * 0.1;
+              return `<tr${isPeak?' class="peak"':''}>
+                <td>${label}</td>
+                <td style="text-align:right;font-weight:600;color:var(--blue)">${d.count}</td>
+                <td><div class="cal-bar-wrap">
+                  <div class="cal-bar" style="width:${Math.round(d.lms/maxLMs*80)}px"></div>
+                  <span style="color:var(--text2)">${fmtN(d.lms)}</span>
+                </div></td>
+                <td style="text-align:right" class="cal-pct">${pct}%</td>
+              </tr>`;
+            }).join('')}
+            <tr style="border-top:1px solid var(--border2)">
+              <td style="font-weight:600">Total</td>
+              <td style="text-align:right;font-weight:600;color:var(--blue)">${months.reduce((s,m)=>s+m[1].count,0)}</td>
+              <td><span style="font-weight:600;color:var(--text)">${fmtN(totalCal)}</span></td>
+              <td style="text-align:right;color:var(--text3)">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ── DEEP DIVE ───────────────────────────────────────────────────────────
+function renderDeepDive() {
+  let list = allEpics;
+
+  if (ddFilter === 'delayed') list = list.filter(e => {
+    const d = (e.deliveryStatus||'').toLowerCase();
+    return d.includes('delay')||d.includes('off track')||d.includes('at risk');
+  });
+  if (ddFilter === 'inprogress') list = list.filter(e => e.status === 'In Progress');
+  if (ddFilter === 'duesoon') list = list.filter(e => {
+    if (!e.edd) return false;
+    const diff = Math.ceil((new Date(e.edd)-new Date())/(864e5));
+    return diff>=0 && diff<=30;
+  });
+  if (ddFilter === 'completed') list = list.filter(e => e.status === 'Done');
+
+  if (ddSearch) {
+    const s = ddSearch.toLowerCase();
+    list = list.filter(e =>
+      e.summary.toLowerCase().includes(s) ||
+      e.key.toLowerCase().includes(s) ||
+      e.currentStage.toLowerCase().includes(s) ||
+      e.assignee.toLowerCase().includes(s)
+    );
+  }
+
+  document.getElementById('deepdive-content').innerHTML = `
+    <div class="dive-wrap">
+      <div class="dive-controls">
+        <div class="filter-tabs">
+          ${['all','inprogress','delayed','duesoon','completed'].map(f =>
+            `<button class="ftab${ddFilter===f?' active':''}" onclick="setDD('${f}')">${{all:'All',inprogress:'In Progress',delayed:'Delayed / At Risk',duesoon:'Due ≤30d',completed:'Completed'}[f]}</button>`
+          ).join('')}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input class="search-box" placeholder="Search project, PM, stage…" value="${ddSearch}" oninput="setSearch(this.value)">
+          <span style="font-size:11px;color:var(--text3)">${list.length} of ${allEpics.length}</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="dive-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Delivery Status</th>
+              <th>Stage</th>
+              <th>EDD</th>
+              <th>Days to EDD</th>
+              <th>Imagery</th>
+              <th>Correction</th>
+              <th>Ingestion</th>
+              <th>Validation</th>
+              <th>Model Run</th>
+              <th>HILO QC</th>
+              <th>Analysis</th>
+              <th>Publish</th>
+              <th>Network</th>
+              <th>Dx LMs</th>
+              <th>Tx LMs</th>
+              <th>PM</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.length ? list.map(e => {
+              const eddInfo = eddStatus(e.edd);
+              const daysInfo = daysToEDD(e.edd, e.status);
+              return `<tr>
+                <td><a class="plink" href="${e.url}" target="_blank">${e.key}</a></td>
+                <td><div class="pname" title="${e.summary}">${e.name}</div></td>
+                <td>${statusPill(e.status)}</td>
+                <td>${deliveryPill(e.deliveryStatus)}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:var(--text2);font-size:10px">${e.currentStage||'—'}</td>
+                <td class="${eddInfo.cls}">${e.edd||'—'}</td>
+                <td class="${daysInfo.cls}">${daysInfo.label}</td>
+                <td>${shPill(e.sh_imagery)}</td>
+                <td>${shPill(e.sh_correction)}</td>
+                <td>${shPill(e.sh_ingestion)}</td>
+                <td>${shPill(e.sh_validation)}</td>
+                <td>${shPill(e.sh_edd_over)}</td>
+                <td>${shPill(e.sh_eid_over)}</td>
+                <td>${shPill(e.sh_eid_appr)}</td>
+                <td>${shPill(e.sh_edd_appr)}</td>
+                <td style="color:var(--text2);font-size:10px">${e.networkType||'—'}</td>
+                <td style="color:var(--text2)">${e.dxLMs?fmtN(e.dxLMs):'—'}</td>
+                <td style="color:var(--text2)">${e.txLMs?fmtN(e.txLMs):'—'}</td>
+                <td style="color:var(--text2)">${e.assignee}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="19" style="text-align:center;padding:30px;color:var(--text3)">No projects match</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">${list.length} projects &nbsp;·&nbsp; 
+        Dx LMs: ${fmtN(list.reduce((s,e)=>s+(Number(e.dxLMs)||0),0))} &nbsp;·&nbsp; 
+        Tx LMs: ${fmtN(list.reduce((s,e)=>s+(Number(e.txLMs)||0),0))}
+        &nbsp;·&nbsp; Stage Health columns populate after Jira automation runs
+      </div>
+    </div>
+  `;
+}
+
+function setDD(f) { ddFilter = f; renderDeepDive(); }
+function setSearch(v) { ddSearch = v; renderDeepDive(); }
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+function fmtN(n) {
+  if (!n) return '0';
+  if (n >= 1000) return (n/1000).toFixed(0)+'K';
+  return String(n);
+}
+
+function statusPill(s) {
+  if (!s) return '<span class="sp-na">—</span>';
+  const m = { 'In Progress':'op-ip','Done':'op-co','To Do':'op-tb','Blocked':'op-bk' };
+  const cls = m[s] || 'op-tb';
+  return `<span class="opill ${cls}">${s}</span>`;
+}
+
+function deliveryPill(s) {
+  if (!s) return '<span class="sp-na">—</span>';
+  const sl = s.toLowerCase();
+  let cls = 'op-tb';
+  if (sl.includes('on track')||sl.includes('on time')) cls = 'op-co';
+  else if (sl.includes('delay')||sl.includes('off track')) cls = 'op-dl';
+  else if (sl.includes('at risk')) cls = 'op-bk';
+  return `<span class="opill ${cls}">${s}</span>`;
+}
+
+function shPill(v) {
+  if (!v) return '<span class="sp-na">—</span>';
+  const vl = v.toLowerCase();
+  let cls='sp-ts', label=v;
+  if (vl.includes('completed') && vl.includes('ontime')) { cls='sp-co'; label='✓ Completed'; }
+  else if (vl.includes('completed') && vl.includes('delayed')) { cls='sp-cd'; label='✓ Delayed'; }
+  else if (vl.includes('in progress') && vl.includes('ontime')) { cls='sp-io'; label='● On Time'; }
+  else if (vl.includes('in progress') && vl.includes('delayed')) { cls='sp-id'; label='● Delayed'; }
+  else if (vl.includes('to be started')) { cls='sp-ts'; label='○ To Start'; }
+  else if (vl.includes('not needed')) { cls='sp-nn'; label='— N/A'; }
+  return `<span class="spill ${cls}">${label}</span>`;
+}
+
+function eddStatus(edd) {
+  if (!edd) return { cls:'', label:'—' };
+  const diff = Math.ceil((new Date(edd)-new Date())/864e5);
+  if (diff < 0)  return { cls:'edd-bad',  label: edd + ' ❌' };
+  if (diff <= 7) return { cls:'edd-warn', label: edd + ' 🔔' };
+  return { cls:'edd-ok', label: edd };
+}
+
+function daysToEDD(edd, status) {
+  if (!edd || status==='Done') return { cls:'days-neu', label:'—' };
+  const diff = Math.ceil((new Date(edd)-new Date())/864e5);
+  if (diff < 0) return { cls:'days-neg', label: diff + 'd' };
+  if (diff <= 7) return { cls:'days-neg', label: '+'+diff+'d ⚠' };
+  return { cls:'days-pos', label: '+'+diff+'d' };
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+window.onload = () => {
+  const c = cfg();
+  if (c.email) {
+    document.getElementById('cfgEmail').value = c.email;
+    document.getElementById('cfgDomain').value = c.domain;
+    document.getElementById('loadBtn').disabled = false;
+    document.getElementById('configBar').style.display = 'none';
+    loadAll();
+  }
+};
+</script>
+</body>
+</html>
