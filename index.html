@@ -173,7 +173,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13
   </div>
   <div class="topbar-right">
     <span class="refresh-time" id="refreshTime"></span>
-    <button class="btn btn-ghost" onclick="toggleConfig()" id="configBtn">⚙ Setup</button>
+    
     <button class="btn btn-primary" id="loadBtn" onclick="loadAll()" disabled>↻ Refresh</button>
   </div>
 </div>
@@ -236,10 +236,10 @@ let ddSearch = '';
 // ── Config ─────────────────────────────────────────────────────────────
 function cfg() {
   return {
-    domain: sessionStorage.getItem('j_domain') || 'aidash.atlassian.net',
-    email:  sessionStorage.getItem('j_email')  || '',
-    token:  sessionStorage.getItem('j_token')  || '',
-    year:   sessionStorage.getItem('j_year')   || '2026',
+    domain: 'aidash.atlassian.net',
+    email:  'aalimah.showkat@aidash.com',
+    token:  'ATATT3xFfGF01k3yqsiiUv8wEjLGsRqzXo9wYnioJUEjmVHo9FY1IQuAZ6nGuXpQe-dTgZmuHnVTYNUWuYBCvVJyG3plD6qQvWz7VcbXTNbZJO8UymnheIzfKziDPKlkyMM6HqqErZol7jw8D3D55VJQ6-dRMsr0j-fqsqf5cBsjUrW-CTuvw6g=DAD3F766',
+    year:   '2026',
   };
 }
 function saveConfig() {
@@ -662,18 +662,9 @@ function daysToEDD(edd, status) {
 
 // ── Init ─────────────────────────────────────────────────────────────────
 window.onload = () => {
-  const c = cfg();
-  if (c.email) {
-    document.getElementById('cfgEmail').value = c.email;
-    document.getElementById('cfgDomain').value = c.domain;
-    document.getElementById('cfgToken').value = c.token || '';
-    document.getElementById('loadBtn').disabled = false;
-    // Don't auto-load — wait for user to click
-  }
-  // Always show config if no token saved
-  if (!c.token) {
-    document.getElementById('configBar').style.display = 'flex';
-  }
+  document.getElementById('configBar').style.display = 'none';
+  document.getElementById('loadBtn').disabled = false;
+  loadAll();
 };
 </script>
 </body>
