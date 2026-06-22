@@ -255,7 +255,8 @@ function toggleConfig() {
 function saveAndLoad() {
   saveConfig();
   const c = cfg();
-  if (!c.email || !c.token) { alert('Please enter your email and API token.'); return; }
+  if (!c.email) { alert('Please enter your Jira email address.'); return; }
+  if (!c.token) { alert('Please enter your Jira API token.'); return; }
   document.getElementById('loadBtn').disabled = false;
   document.getElementById('configBar').style.display = 'none';
   loadAll();
@@ -272,26 +273,42 @@ function showPage(id, el) {
 // ── API ────────────────────────────────────────────────────────────────
 async function jiraFetch(path) {
   const c = cfg();
+  if (!c.email || !c.token) throw new Error('Please enter your email and API token in Setup.');
   const auth = 'Basic ' + btoa(c.email + ':' + c.token);
   const url  = 'https://' + c.domain + path;
-  const headers = { 'Authorization': auth, 'Accept': 'application/json' };
-
-  const proxies = [
-    u => u,                                                        // direct (works on GitHub Pages)
-    u => 'https://corsproxy.io/?' + encodeURIComponent(u),        // proxy 1
-    u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u), // proxy 2
-    u => 'https://proxy.cors.sh/' + u,                            // proxy 3
-  ];
-
-  let lastErr = '';
-  for (const makeUrl of proxies) {
+  
+  // Try direct call first (works on GitHub Pages & local server)
+  try {
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': auth,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (r.ok) return r.json();
+    if (r.status === 401) throw new Error('Invalid credentials — check your email and API token.');
+    if (r.status === 403) throw new Error('Access denied — make sure your token has Jira read permissions.');
+    throw new Error('Jira API returned ' + r.status);
+  } catch(e) {
+    if (e.message.includes('credentials') || e.message.includes('denied') || e.message.includes('401') || e.message.includes('403')) {
+      throw e;
+    }
+    // CORS error — try proxy
     try {
-      const r = await fetch(makeUrl(url), { headers, signal: AbortSignal.timeout(8000) });
-      if (r.ok) return r.json();
-      lastErr = r.status + ' ' + r.statusText;
-    } catch(e) { lastErr = e.message; }
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+      const r2 = await fetch(proxyUrl, {
+        headers: { 'Authorization': auth, 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(15000)
+      });
+      if (r2.ok) return r2.json();
+      throw new Error('Proxy returned ' + r2.status);
+    } catch(e2) {
+      throw new Error('Connection failed: ' + e2.message + ' — Make sure your API token is correct.');
+    }
   }
-  throw new Error('All connection attempts failed: ' + lastErr + '. Try opening via a local server or GitHub Pages.');
 }
 
 async function fetchAllEpics() {
@@ -649,9 +666,13 @@ window.onload = () => {
   if (c.email) {
     document.getElementById('cfgEmail').value = c.email;
     document.getElementById('cfgDomain').value = c.domain;
+    document.getElementById('cfgToken').value = c.token || '';
     document.getElementById('loadBtn').disabled = false;
-    document.getElementById('configBar').style.display = 'none';
-    loadAll();
+    // Don't auto-load — wait for user to click
+  }
+  // Always show config if no token saved
+  if (!c.token) {
+    document.getElementById('configBar').style.display = 'flex';
   }
 };
 </script>
